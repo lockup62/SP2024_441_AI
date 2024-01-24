@@ -1,3 +1,23 @@
+'''MY CODE FOR THE TASK:'''
+def get_row_col(boardPos):
+    
+    row = int(boardPos[1]) - 1 #subtracting one to get the correct row number
+
+    column_mapping = {'A': 0, 'B': 1, 'C': 2} #making a dictionary so we can map the letters to numbers
+
+    column = column_mapping.get(boardPos[0])
+#getting the letter converted to the right number cooresponding in the dictionary
+    coord = (row,column)
+    #making a value to return as a tuple
+    return coord
+
+boardPos = input("Enter board position:") #user input of board position
+myCoord = get_row_col(boardPos) #making a variable equal to the functions result
+print(myCoord) #printing it
+
+
+
+
 '''
 Extra Credit Task-
 
