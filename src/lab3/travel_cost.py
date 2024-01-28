@@ -11,35 +11,46 @@ import numpy as np
 
 def get_route_cost(route_coordinate, game_map):
     """
-    This function takes in a route_coordinate as a tuple of coordinates of cities to connect, 
-    example:  and a game_map as a numpy array of floats,
-    remember from previous lab the routes looked like this: [(A, B), (A, C)]
-    route_coordinates is just inserts the coordinates of the cities into a route like (A, C).
-    route_coordinate might look like this: ((0, 0), (5, 4))
+    Calculates the cost of traveling along the route between two cities on the game map.
 
-    For each route this finds the cells that lie on the line between the
-    two cities at the end points of a route, and then sums the cost of those cells
-      -------------
-    1 | A |   |   |
-      |-----------|
-    2 |   |   |   |
-      |-----------|
-    3 |   | C |   |
-      -------------
-        I   J   K 
-
-    Cost between cities A and C is the sum of the costs of the cells 
-        I1, I2, J2 and J3.
-    Alternatively you could use a direct path from A to C that uses diagonal movement, like
-        I1, J2, J3
-
-    :param route_coordinates: a list of tuples of coordinates of cities to connect
+    :param route_coordinate: a tuple of coordinates of cities to connect
     :param game_map: a numpy array of floats representing the cost of each cell
 
     :return: a floating point number representing the cost of the route
     """
-    # Build a path from start to end that looks like [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 4)]
-    pass 
+    start, end = route_coordinate
+
+    #Bresenham's algorithm
+    #start and end points
+    x0, y0 = start
+    x1, y1 = end
+    #Calculating the differences and signs
+
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x0 < x1 else -1
+    sy = 1 if y0 < y1 else -1
+    #initial param
+    err = dx - dy
+    #making an empty path to store the coords
+    path = []
+
+    while True:
+     #appends the current point to the path
+
+        path.append((x0, y0))
+        #check if end point
+        if x0 == x1 and y0 == y1:
+            break
+        #update the decision param and adjust coords
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x0 += sx
+        if e2 < dx:
+            err += dx
+            y0 += sy
+
     return game_map[tuple(zip(*path))].sum()
 
 
