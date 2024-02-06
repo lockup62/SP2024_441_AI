@@ -29,6 +29,19 @@ from lab2.cities_n_routes import get_randomly_spread_cities, get_routes
 # TODO: Demo blittable surface helper function
 
 ''' Create helper functions here '''
+def create_landscape(size):
+    landscape = get_landscape(size)
+    print("Created a landscape of size", landscape.shape)
+    return pygame.surfarray.make_surface(landscape[:, :, :3])
+def draw_cities(pygame_surface, size, city_names, city_locations_dict, radius = 4, color=(1,20,61)):
+    for city in city_names:
+        curLoc = city_locations_dict[city]
+        pygame.draw.circle(pygame_surface, color, curLoc, radius)
+def draw_routes(pygame_surface, size, routes, city_locations_dict, width = 2, color=(50,30,21)):
+    for route in routes:
+        loc1 = city_locations_dict[route[0]]
+        loc2 = city_locations_dict[route[1]]
+        pygame.draw.line(pygame_surface, color, loc1, loc2, width)
 
 if __name__ == "__main__":
     pygame.init()
@@ -36,14 +49,17 @@ if __name__ == "__main__":
     black = 1, 1, 1
 
     screen = pygame.display.set_mode(size)
-    landscape = get_landscape(size)
-    print("Created a landscape of size", landscape.shape)
-    pygame_surface = pygame.surfarray.make_surface(landscape[:, :, :3]) 
+
+    pygame_surface = create_landscape(size)
 
     city_names = ['Morkomasto', 'Morathrad', 'Eregailin', 'Corathrad', 'Eregarta',
                   'Numensari', 'Rhunkadi', 'Londathrad', 'Baernlad', 'Forthyr']
-    city_locations = [] 
+    city_locations = []
     routes = []
+
+    city_locations = get_randomly_spread_cities(size, len(city_names))
+    routes = [(city_names[i], city_names[(i+1) % len(city_names)]) for i in range(len(city_names) - 1)]
+
 
     ''' Setup cities and routes in here'''
 
@@ -60,7 +76,8 @@ if __name__ == "__main__":
         screen.blit(pygame_surface, (0, 0))
 
         ''' draw cities '''
-
+        draw_cities(pygame_surface, size, city_names, city_locations_dict, 10, black)
         ''' draw first 10 routes '''
+        draw_routes(pygame_surface, size, routes, city_locations_dict, 3, black)
 
         pygame.display.flip()
