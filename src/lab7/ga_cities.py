@@ -20,16 +20,43 @@ from pathlib import Path
 sys.path.append(str((Path(__file__) / ".." / ".." / "..").resolve().absolute()))
 
 from src.lab5.landscape import elevation_to_rgba
+from src.lab5.landscape import get_elevation
 
 
-def game_fitness(cities, idx, elevation, size):
-    fitness = 0.0001  # Do not return a fitness of 0, it will mess up the algorithm.
-    """
-    Create your fitness function here to fulfill the following criteria:
-    1. The cities should not be under water
-    2. The cities should have a realistic distribution across the landscape
-    3. The cities may also not be on top of mountains or on top of each other
-    """
+
+def game_fitness(solution, idx, elevation, size):
+    #fitness starts at 100
+    fitness = 100 
+
+    #Looping through every city
+    for city in solution_to_cities(solution, size):
+        #Getting the elevation of the current city from the elevation array
+        city_elevation = elevation[city[0], city[1]]
+
+        #adjusting highs and lows
+        if city_elevation > 0.9:
+             fitness -= 2
+        
+        if city_elevation < 0.1:
+            fitness -= 2
+         
+
+        if 0.4 < city_elevation and city_elevation < 0.6:
+            fitness += 2
+        
+        #Spacing distance for cities in the x and y directions
+        x= size[0]/10
+        y= size[1]/10
+
+        #Loop through each city and check proximity
+        for next_city in solution_to_cities(solution, size):
+            if (not np.array_equal(next_city, city) and
+                abs(next_city[0] - city[0]) <= x
+                and abs(next_city[1] - city[1]) <= y
+                
+            ):
+                fitness -= 3  #Cities too close so subtract fitness
+
     return fitness
 
 
@@ -116,8 +143,8 @@ if __name__ == "__main__":
     elevation = []
     """ initialize elevation here from your previous code"""
     # normalize landscape
-    elevation = np.array(elevation)
-    elevation = (elevation - elevation.min()) / (elevation.max() - elevation.min())
+    theElevation = get_elevation(size)
+    elevation = (theElevation - theElevation.min()) / (theElevation.max() - theElevation.min())
     landscape_pic = elevation_to_rgba(elevation)
 
     # setup fitness function and GA
