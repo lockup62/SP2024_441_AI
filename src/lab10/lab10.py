@@ -9,8 +9,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 import pandas as pd
 import numpy as np
-
-data = pd.read_csv("src/lab10/heart.csv")
+from sklearn.preprocessing import normalize
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
+data = pd.read_csv("C:/Users/labadmin/Documents/Test_Project/SP2024_441_AI/src/lab10/heart.csv")
 
 # Transform the categorical variables into dummy variables.
 print(data.head())
@@ -24,14 +26,23 @@ x_train, x_test, y_train, y_test = train_test_split(
     x, y, test_size=0.2, random_state=25
 )
 
+
+
 """ Train a sklearn model here. """
 
-sklearn_model = None
+sklearn_model = KNeighborsClassifier(n_neighbors=3)
 
+sklearn_model.fit(x_train, y_train)
 # Accuracy
 print("Accuracy of model: {}\n".format(sklearn_model.score(x_test, y_test)))
 
 
 """ Improve the model by normalizing the input data. """
+x_norm = normalize(x, norm = 'l2')
+x_train, x_test, y_train, y_test = train_test_split(
+    x_norm, y, test_size=0.2, random_state=25
+)
+sklearn_model = KNeighborsClassifier(n_neighbors=25)
+sklearn_model.fit(x_train, y_train)
 
 print("Accuracy of improved model: {}\n".format(sklearn_model.score(x_test, y_test)))
