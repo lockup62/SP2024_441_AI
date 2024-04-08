@@ -65,15 +65,23 @@ def get_history_returns(history):
 
 
 def run_episodes(n_episodes):
-    ''' Run 'n_episodes' random episodes and return the action values for each state-action pair.
-        Action values are calculated as the average return for each state-action pair over the 'n_episodes' episodes.
-        Use the get_history_returns function to get the returns for each state-action pair in each episode.
-        Collect the returns for each state-action pair in a dictionary of dictionaries where the keys are states and
-            the values are dictionaries of actions and their returns.
-        After all episodes have been run, calculate the average return for each state-action pair.
-        Return the action values as a dictionary of dictionaries where the keys are states and 
-            the values are dictionaries of actions and their values.
-    '''
+    action_values = defaultdict(lambda: defaultdict(list)) 
+
+    for episode in range(n_episodes):
+        player1 = PyGameRandomCombatPlayer("Player 1")
+        player2 = PyGameRandomCombatPlayer("Player 2")
+        history = run_episode(player1, player2)
+        episode_returns = get_history_returns(history)
+        
+        #Collect returns for each state-action pair
+        for state, actions in episode_returns.items():
+            for action, return_value in actions.items():
+                action_values[state][action].append(return_value)
+
+    #Calculating the average return for each stateaction pair
+    for state, actions in action_values.items():
+        for action, returns in actions.items():
+            action_values[state][action] = sum(returns) / len(returns)
 
     return action_values
 
