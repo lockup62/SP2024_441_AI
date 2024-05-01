@@ -6,7 +6,6 @@ import numpy as np
 def get_elevation(size, octaves=3):
     xpix, ypix = size
     noise = PerlinNoise(octaves=octaves, seed=2)
-    # elevation = np.random.random(size)
     elevation = np.array(
         [[noise([i / xpix, j / ypix]) for j in range(ypix)] for i in range(xpix)]
     )
@@ -27,10 +26,12 @@ def elevation_to_rgba(elevation, cmap="gist_earth"):
     return landscape
 
 
-get_landscape = lambda pixel_map: elevation_to_rgba(get_elevation(pixel_map))
-get_combat_bg = lambda pixel_map: elevation_to_rgba(
-    get_elevation(pixel_map, 10), "RdPu"
-)
+def get_landscape(pixel_map):
+    return elevation_to_rgba(get_elevation(pixel_map))
+
+
+def get_combat_bg(pixel_map):
+    return elevation_to_rgba(get_elevation(pixel_map, 10), "RdPu")
 
 
 if __name__ == "__main__":
