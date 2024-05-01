@@ -3,13 +3,44 @@ import random
 import pygame
 import sys
 from pathlib import Path
+from ollama import Ollama
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 sys.path.append(str((Path(__file__) / ".." / "..").resolve().absolute()))
 from lab4.rock_paper_scissor import Player
 
 weapons = ["Sword", "Arrow", "Fire"]
+ollama = Ollama()
 
+def generate_ai_response(input_text):
+    # Generate embedding for input text
+    input_embedding = ollama.embed_sentence(input_text)
 
+    # Calculate cosine similarity between input text and each sentence
+    similarities = {}
+    for sentence, embedding in sentence_embeddings.items():
+        similarity = cosine_similarity([input_embedding], [embedding])[0][0]
+        similarities[sentence] = similarity
+
+    # Sorting
+    sorted_sentences = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+
+    # Getting top 3 most similar sentences
+    top_sentences = sorted_sentences[:3]
+
+    # Building the query prompt
+    query_prompt = "CONTEXT:\n\n"
+    for sentence, _ in sorted_sentences:
+        query_prompt += sentence + "\n\n"
+
+    query_prompt += "QUERY:\n\n"
+    query_prompt += input_text + "\n\n"
+
+    # Generate response
+    response = ollama.generate(query_prompt)
+    
+    return response
 class CombatPlayer(Player):
     def __init__(self, name):
         super().__init__(name)
@@ -17,6 +48,9 @@ class CombatPlayer(Player):
         self.health = 100
         self.weapon = 0
         self.current_env_state = None
+        input_text = "say something as if you just approached me in battle"
+      # Output the AI response
+        ai_response = generate_ai_response(input_text)
 
     def selectAction(self, percept):
         """
@@ -70,10 +104,15 @@ class Combat:
         if player.health < 1 and opponent.health > 0:
             self.gameOver = True
             print("You Lose")
+            player.money += 20  
+            print(f"Player's money: {player.money}")   
             return -1
         elif opponent.health < 1 and player.health > 0:
             self.gameOver = True
             print("You Win")
+            if isinstance(player, PyGameHumanCombatPlayer):  # Check if the player is human
+                player.money += 20  
+                print(f"Player's money: {player.money}")
             return 1
         elif player.health < 1 and opponent.health < 1:
             self.gameOver = True
