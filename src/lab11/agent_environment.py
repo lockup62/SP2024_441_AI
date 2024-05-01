@@ -6,13 +6,13 @@ from pygame_combat import run_pygame_combat
 from pygame_human_player import PyGameHumanPlayer
 from landscape import get_landscape, get_combat_bg
 from pygame_ai_player import PyGameAIPlayer
-
+from pygame_human_player import PyGameHumanCombatPlayer
 from pathlib import Path
-
-sys.path.append(str((Path(__file__) / ".." / "..").resolve().absolute()))
-
-from lab2.cities_n_routes import get_randomly_spread_cities, get_routes
-
+from ollama import Ollama
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+# Import the GA-related functions from ga_cities.py
+from ga_cities import generate_cities
 
 pygame.font.init()
 game_font = pygame.font.SysFont("Comic Sans MS", 15)
@@ -88,19 +88,12 @@ if __name__ == "__main__":
         "Forthyr",
     ]
 
-    cities = get_randomly_spread_cities(size, len(city_names))
-    routes = get_routes(cities)
-
-    random.shuffle(routes)
-    routes = routes[:10]
+    # Generate cities using the GA system
+    cities, routes = generate_cities(size, city_names)
 
     player_sprite = Sprite(sprite_path, cities[start_city])
 
     player = PyGameHumanPlayer()
-
-    """ Add a line below that will reset the player variable to 
-    a new object of PyGameAIPlayer class."""
-    player = PyGameAIPlayer()
 
     state = State(
         current_city=start_city,
