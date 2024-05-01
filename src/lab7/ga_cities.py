@@ -1,124 +1,93 @@
-import sys
-import pygame
-from sprite import Sprite
-from pygame_combat import run_pygame_combat
-from pygame_human_player import PyGameHumanPlayer
-from landscape import get_landscape_surface, get_combat_surface
-from pygame_ai_player import PyGameAIPlayer
-from pygame_human_player import PyGameHumanCombatPlayer
-from ga_cities import generate_cities
+import pygad
+import numpy as np
+import time
 
-pygame.font.init()
-game_font = pygame.font.SysFont("Comic Sans MS", 15)
+def game_fitness(solution, idx, elevation, size):
+    fitness = 100 
 
-def setup_window(width, height, caption):
-    pygame.init()
-    window = pygame.display.set_mode((width, height))
-    pygame.display.set_caption(caption)
-    return window
+    for city in solution_to_cities(solution, size):
+        city_elevation = elevation[city[0], city[1]]
 
-def displayCityNames(city_locations, city_names):
-    for i, name in enumerate(city_names):
-        text_surface = game_font.render(str(i) + " " + name, True, (0, 0, 150))
-        screen.blit(text_surface, city_locations[i])
+        if city_elevation > 0.9:
+            fitness -= 2
+        if city_elevation < 0.1:
+            fitness -= 2
+        if 0.4 < city_elevation < 0.6:
+            fitness += 2
+        
+        x = size[0] / 10
+        y = size[1] / 10
 
-class State:
-    def __init__(
-        self,
-        current_city,
-        destination_city,
-        travelling,
-        encounter_event,
-        cities,
-        routes,
-    ):
-        self.current_city = current_city
-        self.destination_city = destination_city
-        self.travelling = travelling
-        self.encounter_event = encounter_event
-        self.cities = cities
-        self.routes = routes
+        for next_city in solution_to_cities(solution, size):
+            if (not np.array_equal(next_city, city) and
+                abs(next_city[0] - city[0]) <= x and
+                abs(next_city[1] - city[1]) <= y
+            ):
+                fitness -= 3
 
-if __name__ == "__main__":
-    size = width, height = 640, 480
-    black = 1, 1, 1
-    start_city = 0
-    end_city = 9
-    sprite_path = "assets/lego.png"
-    sprite_speed = 1
+    return fitness
 
-    screen = setup_window(width, height, "Game World Gen Practice")
+def setup_GA(fitness_fn, n_cities, size):
+    num_generations = 100
+    num_parents_mating = 10
+    solutions_per_population = 300
+    num_genes = n_cities
+    init_range_low = 0
+    init_range_high = size[0] * size[1]
+    parent_selection_type = "sss"
+    keep_parents = 10
+    crossover_type = "single_point"
+    mutation_type = "random"
+    mutation_percent_genes = 10
 
-    landscape_surface = get_landscape_surface(size)
-    combat_surface = get_combat_surface(size)
-    city_names = [
-        "Morkomasto",
-        "Morathrad",
-        "Eregailin",
-        "Corathrad",
-        "Eregarta",
-        "Numensari",
-        "Rhunkadi",
-        "Londathrad",
-        "Baernlad",
-        "Forthyr",
-    ]
-
-    # Generate cities using the GA system
-    cities, routes = generate_cities(size, len(city_names))
-
-    player_sprite = Sprite(sprite_path, cities[start_city])
-
-    player = PyGameHumanPlayer()
-
-    state = State(
-        current_city=start_city,
-        destination_city=start_city,
-        travelling=False,
-        encounter_event=False,
-        cities=cities,
-        routes=routes,
+    ga_instance = pygad.GA(
+        num_generations=num_generations,
+        num_parents_mating=num_parents_mating,
+        fitness_func=fitness_fn,
+        sol_per_pop=solutions_per_population,
+        num_genes=num_genes,
+        gene_type=int,
+        init_range_low=init_range_low,
+        init_range_high=init_range_high,
+        parent_selection_type=parent_selection_type,
+        keep_parents=keep_parents,
+        crossover_type=crossover_type,
+        mutation_type=mutation_type,
+        mutation_percent_genes=mutation_percent_genes,
+        on_generation=lambda gen: time.sleep(0.01)
     )
 
-    while True:
-        action = player.selectAction(state)
-        if 0 <= int(chr(action)) <= 9:
-            if int(chr(action)) != state.current_city and not state.travelling:
-                start = cities[state.current_city]
-                state.destination_city = int(chr(action))
-                destination = cities[state.destination_city]
-                player_sprite.set_location(cities[state.current_city])
-                state.travelling = True
-                print(
-                    "Travelling from", state.current_city, "to", state.destination_city
-                )
+    return fitness_fn, ga_instance
 
-        screen.fill(black)
-        screen.blit(landscape_surface, (0, 0))
+def solution_to_cities(solution, size, margin=10, min_distance=10):
+    cities = []
+    while len(cities) < len(solution):
+        x = np.random.randint(margin, size[0] - margin)
+        y = np.random.randint(margin, size[1] - margin)
+        city = [x, y]
+        if all(np.linalg.norm(np.array(city) - np.array(existing_city)) >= min_distance for existing_city in cities):
+            cities.append(city)
+    return np.array(cities)
 
-        for city in cities:
-            pygame.draw.circle(screen, (255, 0, 0), city, 5)
+def generate_cities(size, n_cities):
+    # Load elevation data
+    elevation = get_elevation(size)
+    elevation = (elevation - elevation.min()) / (elevation.max() - elevation.min())
 
-        for line in routes:
-            pygame.draw.line(screen, (255, 0, 0), *line)
+    # Setup fitness function and GA
+    fitness = lambda ga_instance, solution, idx: game_fitness(
+        solution, idx, elevation=elevation, size=size
+    )
+    fitness_function, ga_instance = setup_GA(fitness, n_cities, size)
 
-        displayCityNames(cities, city_names)
-        if state.travelling:
-            state.travelling = player_sprite.move_sprite(destination, sprite_speed)
-            state.encounter_event = random.randint(0, 1000) < 2
-            if not state.travelling:
-                print('Arrived at', state.destination_city)
+    # Run GA to generate cities
+    ga_instance.run()
 
-        if not state.travelling:
-            encounter_event = False
-            state.current_city = state.destination_city
+    # Get the best solution
+    best_solution = ga_instance.best_solution()[0]
 
-        if state.encounter_event:
-            run_pygame_combat(combat_surface, screen, player_sprite)
-            state.encounter_event = False
-        else:
-            player_sprite.draw_sprite(screen)
-        pygame.display.update()
-        if state.current_city == end_city:
-            print('You have reached the end of the game!')
-            break
+    # Convert solution to cities and routes
+    cities = solution_to_cities(best_solution, size)
+    routes = [(i, (i + 1) % n_cities) for i in range(n_cities)]
+
+    return cities, routes
